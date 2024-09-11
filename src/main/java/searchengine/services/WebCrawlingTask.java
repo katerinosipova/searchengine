@@ -47,7 +47,7 @@ public class WebCrawlingTask extends RecursiveTask<Set<String>>{
                 taskList.add(task);
             }
         }catch (HttpStatusException he) {
-            System.err.println("Ошибка при получении URL: " + link);
+            log.error("Ошибка при получении URL: " + link);
         } catch (Exception e) {
            e.printStackTrace();
         }
@@ -58,21 +58,6 @@ public class WebCrawlingTask extends RecursiveTask<Set<String>>{
     }
 }
 
-//Site site = (Site) siteRepository.findByUrl(url);
-///            if(site == null) {
-//                site = new Site();
-//                site.setName("Volochek.Life");
-//                site.setUrl("https://www.volochek.life");
-//                site.setStatus(IndexingStatus.INDEXING);
-//                site.setStatusTime(LocalDateTime.now());
-//                siteRepository.save(site);
-//            }
-//            PageEntity page = new PageEntity();
-//            page.setSite(page.getSite());
-//            page.setPath(page.getPath());
-//            page.setContent(document.html());
-//            page.setCode(page.getCode());
-//            pageRepository.save(page);
 
 
 

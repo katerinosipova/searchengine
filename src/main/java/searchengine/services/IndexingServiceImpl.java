@@ -62,7 +62,7 @@ public class IndexingServiceImpl implements IndexingService{
                 TreeSet<String> parser = new TreeSet<>(pool.invoke(webCrawlingTask));
                 ForkJoinTask<Set<String>> task = pool.submit(webCrawlingTask);
 
-                System.out.println("Сайт индексируется " + site.getName());
+                log.info("Сайт индексируется " + site.getName());
 
                 for (String pageUrl : parser) {
                     if(stopIndexing) {
@@ -86,7 +86,7 @@ public class IndexingServiceImpl implements IndexingService{
                     }
                 }
                 if(stopIndexing && task.isDone()) {
-                    System.out.println("Индексирование сайта " + site.getName() + " завершена");
+                    log.info("Индексирование сайта " + site.getName() + " завершена");
 
                     siteEntity.setStatus(IndexingStatus.INDEXED);
                     siteRepository.save(siteEntity);
@@ -94,7 +94,7 @@ public class IndexingServiceImpl implements IndexingService{
             } catch (HttpStatusException he) {
                 he.printStackTrace();
             }catch (Exception e) {
-                System.out.println("Ошибка индексации");
+                log.error("Ошибка индексации");
                 SiteEntity siteEntity = siteRepository.findAll().stream()
                         .filter(se -> se.getUrl().equals(site.getUrl()))
                         .findFirst().orElse(null);
@@ -107,7 +107,7 @@ public class IndexingServiceImpl implements IndexingService{
 
     @Override
     public void stopIndexing() {
-        System.out.println("Зпущен процесс остановки индексации сайтов");
+        log.info("Зпущен процесс остановки индексации сайтов");
         try {
             stopIndexing = true;
             if(pool != null) {
@@ -124,7 +124,7 @@ public class IndexingServiceImpl implements IndexingService{
         } catch (Exception e) {
             Thread.currentThread().interrupt();
         }
-        System.out.println("Индексация успешно остановлена");
+        log.info("Индексация успешно остановлена");
     }
 }
 
