@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import searchengine.dto.statistics.IndexingResponse;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.exceptions.IndexingAlreadyStartedException;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
 
@@ -32,13 +31,13 @@ public class ApiController {
 
 
     @GetMapping("/startIndexing")
-    public void startIndexing () throws IndexingAlreadyStartedException {
-        ResponseEntity.ok();
+    public ResponseEntity<IndexingResponse> startIndexing() {
+        return ResponseEntity.ok(indexingService.startIndexing());
     }
 
     @GetMapping("/stopIndexing")
-    public void stopIndexing () throws IndexingAlreadyStartedException {
-       ResponseEntity.ok();
+    public ResponseEntity<IndexingResponse> stopIndexing (){
+      return ResponseEntity.ok(indexingService.stopIndexing());
     }
 }
 

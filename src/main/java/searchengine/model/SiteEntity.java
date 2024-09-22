@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class SiteEntity {
 
     @CreationTimestamp
     @Column(name = "status_time", columnDefinition = "DATETIME")
+    @DateTimeFormat(pattern = "yyyy-MM-dd hh-mm")
     @NonNull
     private LocalDateTime statusTime;
 
@@ -43,6 +45,6 @@ public class SiteEntity {
     @NonNull
     private String name;
 
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL, fetch = FetchType.LAZY) //??
-    private Set<PageEntity> pages;
+//    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL) //??, fetch = FetchType.LAZY
+//    private Set<PageEntity> pages;
 }

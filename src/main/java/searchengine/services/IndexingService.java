@@ -5,7 +5,7 @@ import searchengine.exceptions.IndexingAlreadyStartedException;
 
 public interface IndexingService {
 
-     void startIndexing();
-     void stopIndexing ();
+     IndexingResponse startIndexing();
+     IndexingResponse stopIndexing ();
 
 }

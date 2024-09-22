@@ -1,16 +1,14 @@
 package searchengine.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "pages", indexes = {@Index(name = "path_index", columnList = "site_id, path", unique = true)})
+@Table(name = "pages", indexes = @Index(name = "path_index", columnList = "path", unique = true))
 public class PageEntity {
 
     @Id

@@ -8,7 +8,7 @@ import searchengine.model.SiteEntity;
 
 @Repository
 public interface SiteRepository extends JpaRepository<SiteEntity, Integer> {
-   SiteEntity findByUrl(String url);
+//   SiteEntity findByUrl(String url);
 //
 //   long countByUrl(String url);
 
