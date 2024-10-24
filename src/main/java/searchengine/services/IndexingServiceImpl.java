@@ -13,9 +13,10 @@ import searchengine.dto.statistics.IndexingResponse;
 import searchengine.model.IndexingStatus;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
+import searchengine.repository.IndexRepository;
+import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
@@ -25,7 +26,7 @@ import java.util.concurrent.ForkJoinTask;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class IndexingServiceImpl implements IndexingService{
+public class IndexingServiceImpl implements IndexingService {
 
     @Autowired
     private final SitesList sitesList;
@@ -33,20 +34,29 @@ public class IndexingServiceImpl implements IndexingService{
     private final SiteRepository siteRepository;
     @Autowired
     private final PageRepository pageRepository;
-    private  final ForkJoinPool pool = new ForkJoinPool();
+    @Autowired
+    private final LemmaRepository lemmaRepository;
+    @Autowired
+    private final IndexRepository indexRepository;
+    private final ForkJoinPool pool = new ForkJoinPool();
 
     private volatile boolean stopIndexing = false;
 
 
     @Override
     public IndexingResponse startIndexing() {
-        if(stopIndexing) {
-            throw new RuntimeException("Индексация уже запущена");
+        if (stopIndexing) {
+            return new IndexingResponse(false, "Индексация уже запущена");
+//        } else {
+//            stopIndexing = true;
         }
         //удалять все имеющиеся данные по этому сайту (записи из таблиц site и page);
-        if(siteRepository != null || pageRepository != null) {
+        if (siteRepository != null || pageRepository != null ||
+        lemmaRepository != null || indexRepository != null) {
             siteRepository.deleteAll();
             pageRepository.deleteAll();
+            lemmaRepository.deleteAll();
+            indexRepository.deleteAll();
             log.info("Удалены данные сайта");
         }
         //создавать в таблице site новую запись со статусом INDEXING
@@ -62,7 +72,7 @@ public class IndexingServiceImpl implements IndexingService{
 
                 //обходить все страницы, начиная с главной,
                 // добавлять их адреса, статусы и содержимое в базу данных в таблицу page;
-                String mainPageUrl = site.getUrl().replaceAll("www", "");
+                String mainPageUrl = site.getUrl().replaceAll("www.", "");
                 WebCrawlingTask webCrawlingTask = new WebCrawlingTask(mainPageUrl);
                 TreeSet<String> parser = new TreeSet<>(pool.invoke(webCrawlingTask));
                 ForkJoinTask<Set<String>> task = pool.submit(webCrawlingTask);
@@ -70,31 +80,36 @@ public class IndexingServiceImpl implements IndexingService{
                 log.info("Сайт индексируется " + site.getName());
 
                 for (String pageUrl : parser) {
-                    if(stopIndexing) {
+                    if (stopIndexing) {
                         break;
                     }
-                    if(pageUrl.equals(siteEntity.getUrl())) {
+                    if (pageUrl.equals(siteEntity.getUrl())) {
                         continue;
                     }
                     Document doc = Jsoup.connect(pageUrl).get();
+                    String content = doc.body().html();
                     try {
+                        log.info("Добавление адресов, статусов и содержимое страниц в базу данных в таблицу page");
                         PageEntity pageEntity = new PageEntity();
-                        pageEntity.setSite(site);
+                        pageEntity.setSite(siteEntity);
                         pageEntity.setPath(pageUrl.replaceAll(mainPageUrl, ""));
                         pageEntity.setCode(doc.connection().response().statusCode());
-                        pageEntity.setContent(doc.body().html());
+                        pageEntity.setContent(content);
                         pageRepository.save(pageEntity);
 
-                    }catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-                if(!stopIndexing && task.isDone()) {
-                    log.info("Индексированиe сайта " + site.getName() + " завершенo");
+                if (!stopIndexing && task.isDone()) {
+                    log.info("Индексация сайта " + site.getName() + " завершена");
 
                     siteEntity.setStatus(IndexingStatus.INDEXED);
                     siteRepository.save(siteEntity);
+                    log.info("Изменили статус на INDEXED");
                 }
+            } catch (HttpStatusException he) {
+                he.printStackTrace();
             } catch (Exception e) {
                 log.error("Ошибка индексации");
                 SiteEntity siteEntity = siteRepository.findAll().stream()
@@ -105,20 +120,20 @@ public class IndexingServiceImpl implements IndexingService{
                 siteRepository.save(siteEntity);
             }
         }
-        return new IndexingResponse();
+        return new IndexingResponse(true);
     }
 
-    @Override
+
     public IndexingResponse stopIndexing() {
         log.info("Запущен процесс остановки индексации сайтов");
         try {
             stopIndexing = true;
-            if(pool != null) {
+            if (pool != null) {
                 pool.shutdownNow();
             }
             List<SiteEntity> siteEntities = siteRepository.findAll();
             for (SiteEntity siteEntity : siteEntities) {
-                if(siteEntity.getStatus() == IndexingStatus.INDEXING) {
+                if (siteEntity.getStatus() == IndexingStatus.INDEXING) {
                     siteEntity.setStatus(IndexingStatus.FAILED);
                     siteEntity.setLastError("Индексация остановлена пользователем");
                     siteRepository.save(siteEntity);
@@ -128,9 +143,15 @@ public class IndexingServiceImpl implements IndexingService{
             Thread.currentThread().interrupt();
         }
         log.info("Индексация успешно остановлена");
-        return stopIndexing();
+        return new IndexingResponse(true);
+    }
+
+    @Override
+    public IndexingResponse indexPage(String url) {
+        return null;
     }
 }
+
 
 
 
